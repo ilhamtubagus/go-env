@@ -4,6 +4,7 @@ import (
 	conditionals "github.com/ilhamtubagus/go-conditionals"
 	"os"
 	"reflect"
+	"strings"
 )
 
 type Options struct {
@@ -131,5 +132,121 @@ func setFieldValue(field reflect.Value, fieldType reflect.StructField, envValue 
 		}
 		field.Set(reflect.ValueOf(parsedValue))
 	}
+
+	switch field.Kind() {
+	case reflect.Slice:
+		err := handleSlice(field, fieldType, envValue, options)
+		if err != nil {
+			return err
+		}
+	case reflect.Map:
+		err := handleMap(field, fieldType, options)
+		if err != nil {
+			return err
+		}
+	default:
+		return NoParserFoundError{fieldType.Name}
+	}
+	return nil
+}
+
+func parseMapValue(field reflect.Value, fieldType reflect.StructField, value string, options Options) (reflect.Value, error) {
+	parseFunc, ok := options.FuncMap[field.Type().Elem()]
+	if ok {
+		parsedValue, err := parseFunc(value)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+
+		return reflect.ValueOf(parsedValue), nil
+	}
+
+	parseFunc, ok = defaultParser[field.Type().Elem().Kind()]
+	if ok {
+		parsedValue, err := parseFunc(value)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+
+		return reflect.ValueOf(parsedValue), nil
+	}
+
+	return reflect.Value{}, NoParserFoundError{fieldType.Name}
+}
+
+func handleMap(field reflect.Value, fieldType reflect.StructField, options Options) error {
+	if field.Type().Key().Kind() != reflect.String {
+		return InvalidMapKeyError
+	}
+
+	matchingEnv := make(map[string]string)
+
+	// Retrieve all environment variables
+	envVars := os.Environ()
+	envTag := fieldType.Tag.Get(options.TagName)
+
+	for _, env := range envVars {
+		// Split into key and value
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) != 2 {
+			return InvalidEnvironmentVariableError
+		}
+		key, value := parts[0], parts[1]
+
+		// Check if the key starts with the prefix
+		if strings.HasPrefix(key, envTag) {
+			mapKey := strings.TrimPrefix(key, envTag+"_")
+			mapKey = snakeToCamelCase(mapKey)
+			matchingEnv[mapKey] = value
+		}
+	}
+
+	// Create a new map and set it to the field
+	newMap := reflect.MakeMap(field.Type())
+	for k, v := range matchingEnv {
+		value, err := parseMapValue(newMap, fieldType, v, options)
+		if err != nil {
+			return err
+		}
+		newMap.SetMapIndex(reflect.ValueOf(k), value)
+	}
+	field.Set(newMap)
+
+	return nil
+}
+
+func handleSlice(field reflect.Value, fieldType reflect.StructField, value string, options Options) error {
+	separator := fieldType.Tag.Get(options.SeparatorTagName)
+	if conditionals.IsZeroValue(separator) {
+		separator = options.separator
+	}
+	values := strings.Split(value, separator)
+	typee := field.Type().Elem()
+	if typee.Kind() == reflect.Ptr {
+		typee = typee.Elem()
+	}
+
+	parserFunc, ok := options.FuncMap[reflect.TypeOf(field)]
+	if !ok {
+		parserFunc, ok = defaultParser[typee.Kind()]
+		if !ok {
+			return NoParserFoundError{fieldType: fieldType.Name}
+		}
+	}
+	result := reflect.MakeSlice(fieldType.Type, 0, len(values))
+	for _, part := range values {
+		r, err := parserFunc(part)
+		if err != nil {
+			return NoParserFoundError{fieldType: fieldType.Name}
+		}
+		v := reflect.ValueOf(r).Convert(typee)
+		if fieldType.Type.Elem().Kind() == reflect.Ptr {
+			v = reflect.New(typee)
+			v.Elem().Set(reflect.ValueOf(r).Convert(typee))
+		}
+		result = reflect.Append(result, v)
+	}
+	field.Set(result)
+
 	return nil
 }
