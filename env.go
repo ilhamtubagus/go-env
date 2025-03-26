@@ -122,6 +122,8 @@ func setFieldValue(field reflect.Value, fieldType reflect.StructField, envValue 
 			return err
 		}
 		field.Set(reflect.ValueOf(parsedValue))
+
+		return nil
 	}
 
 	parseFunc, ok = defaultParser[field.Kind()]
@@ -131,6 +133,8 @@ func setFieldValue(field reflect.Value, fieldType reflect.StructField, envValue 
 			return err
 		}
 		field.Set(reflect.ValueOf(parsedValue))
+
+		return nil
 	}
 
 	switch field.Kind() {
@@ -147,6 +151,7 @@ func setFieldValue(field reflect.Value, fieldType reflect.StructField, envValue 
 	default:
 		return NoParserFoundError{fieldType.Name}
 	}
+
 	return nil
 }
 
