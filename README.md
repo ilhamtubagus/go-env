@@ -45,14 +45,14 @@ import (
 
 type Config struct {
     Host     string   `env:"HOST"`
-    Port     int      `env:"PORT",defaultEnv:"8080"`
+    Port     int      `env:"PORT" defaultEnv:"8080"`
     Debug    bool     `env:"DEBUG"`
     Database struct {
         Name     string `env:"DB_NAME"`
         User     string `env:"DB_USER"`
         Password string `env:"DB_PASSWORD"`
     }
-    AllowedIPs []string `env:"ALLOWED_IPS",envSeparator:";"`
+    AllowedIPs []string `env:"ALLOWED_IPS" envSeparator:";"`
     Options   map[string]string `env:"OPTIONS"`
 }
 
