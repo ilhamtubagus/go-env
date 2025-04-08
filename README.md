@@ -1,6 +1,6 @@
-# go-env
+# goenv
 
-go-env is a Go package that provides a simple and flexible way to unmarshal environment variables into Go structs. It uses struct tags to map environment variables to struct fields and supports various data types including nested structs, slices, and maps.
+goenv is a Go package that provides a simple and flexible way to unmarshal environment variables into Go structs. It uses struct tags to map environment variables to struct fields and supports various data types including nested structs, slices, and maps.
 
 ## Features
 
