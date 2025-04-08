@@ -16,7 +16,7 @@ go-env is a Go package that provides a simple and flexible way to unmarshal envi
 To install go-env, use `go get`:
 
 ```bash
-go get github.com/ilhamtubagus/go-env
+go get github.com/ilhamtubagus/goenv
 ```
 
 ## Usage
@@ -58,7 +58,7 @@ type Config struct {
 
 func main() {
     var cfg Config
-    err := go_env.Unmarshal(&cfg)
+    err := goenv.Unmarshal(&cfg)
     if err != nil {
         fmt.Printf("Error: %v\n", err)
         return

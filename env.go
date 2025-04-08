@@ -1,7 +1,7 @@
-package go_env
+package goenv
 
 import (
-	conditionals "github.com/ilhamtubagus/go-conditionals"
+	"github.com/ilhamtubagus/condutil"
 	"os"
 	"reflect"
 	"strings"
@@ -92,7 +92,7 @@ func parseField(field reflect.Value, fieldType reflect.StructField, options Opti
 func parseEnv(field reflect.Value, fieldType reflect.StructField, options Options) error {
 	envTag := fieldType.Tag.Get(options.TagName)
 	// skip parsing when env tag is empty
-	if conditionals.IsZeroValue(envTag) {
+	if condutil.IsZeroValue(envTag) {
 		return nil
 	}
 
@@ -107,7 +107,7 @@ func parseEnv(field reflect.Value, fieldType reflect.StructField, options Option
 
 func parseDefaultEnv(field reflect.Value, fieldType reflect.StructField, options Options) error {
 	defaultValue := fieldType.Tag.Get(options.DefaultTagName)
-	if conditionals.IsZeroValue(defaultValue) {
+	if condutil.IsZeroValue(defaultValue) {
 		return nil
 	}
 
@@ -222,7 +222,7 @@ func handleMap(field reflect.Value, fieldType reflect.StructField, options Optio
 
 func handleSlice(field reflect.Value, fieldType reflect.StructField, value string, options Options) error {
 	separator := fieldType.Tag.Get(options.SeparatorTagName)
-	if conditionals.IsZeroValue(separator) {
+	if condutil.IsZeroValue(separator) {
 		separator = options.separator
 	}
 	values := strings.Split(value, separator)
